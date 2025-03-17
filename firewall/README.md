@@ -1,48 +1,112 @@
-# OpenCV with Python in 4 Hours
-Notes and code used in my [**Python and OpenCV course**](https://youtu.be/oXlwWbU8l2o) on [freeCodeCamp.org](http://freecodecamp.org). You can find me on [Twitter](https://twitter.com/jasmcaus) for more info on courses I'm working on currently.
+### 1. Allow SSH Access
 
-
-## Important Updates:
-`caer.train_val_split()` is a deprecated feature in [`caer`](https://github.com/jasmcaus/caer/). Use `sklearn.model_selection.train_test_split()` instead. See [#9](https://github.com/jasmcaus/opencv-course/issues/9) for more details.
-
-
-# Course Outline (with timestamps)
-## 1. Installation
-Besides installing OpenCV, we cover the installation of the following package:
-
-[**`Caer`**](https://github.com/jasmcaus/caer/) is a *lightweight, high-performance* Vision library for high-performance AI research. It simplifies your approach towards Computer Vision by abstracting away unnecessary boilerplate code giving you the **flexibility** to quickly prototype deep learning models and research ideas. 
-```bash
-$ pip install caer
+```
+sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
 ```
 
+**Reason**: This rule allows incoming SSH connections on the standard port 22.
 
-## 2. Basic Concepts:
-- Reading Images and Video ([0:04:12](https://www.youtube.com/watch?v=x3c8w2ruhjs&t=252s))
-- Resizing and Rescaling Images and Video Frames ([0:12:57](https://www.youtube.com/watch?v=x3c8w2ruhjs&t=777s))
-- Drawing Shapes and Placing text on images ([0:20:21](https://www.youtube.com/watch?v=x3c8w2ruhjs&t=1221s))
-- 5 Essential Methods in OpenCV ([0:31:55](https://www.youtube.com/watch?v=x3c8w2ruhjs&t=1915s))
-- Image Transformations ([0:44:13](https://www.youtube.com/watch?v=x3c8w2ruhjs&t=2653s))
-- Contour Detection ([0:57:06](https://www.youtube.com/watch?v=x3c8w2ruhjs&t=3426s))
-    
-## 3. Advanced Concepts:
-- Switching between Colour Spaces (RGB, BGR, Grayscale, HSV and L*a*b) ([1:12:53](https://www.youtube.com/watch?v=x3c8w2ruhjs&t=4373s))
-- Splitting and Merging Colour Channels ([1:23:10](https://www.youtube.com/watch?v=x3c8w2ruhjs&t=4990s))
-- Blurring ([1:31:03](https://www.youtube.com/watch?v=x3c8w2ruhjs&t=5463s))
-- BITWISE operations ([1:44:27](https://www.youtube.com/watch?v=x3c8w2ruhjs&t=6267s))
-- Masking ([1:53:06](https://www.youtube.com/watch?v=x3c8w2ruhjs&t=6786s))
-- Histogram Computation ([2:01:43](https://www.youtube.com/watch?v=x3c8w2ruhjs&t=7303s))
-- Thresholding/Binarizing Images ([2:15:22](https://www.youtube.com/watch?v=x3c8w2ruhjs&t=8122s))
-- Advanced Edge Detection ([2:26:27](https://www.youtube.com/watch?v=x3c8w2ruhjs&t=8787s))
-    
-## 4. Face Detection and Recognition
-- Face Detection using Haar Cascades ([2:35:25](https://www.youtube.com/watch?v=x3c8w2ruhjs&t=9325s))
-- Face Recognition using OpenCV's LBPHFaceRecognizer algorithm ([2:49:05](https://www.youtube.com/watch?v=x3c8w2ruhjs&t=10145s))
-    
-## 5. Capstone: Deep Computer Vision
-- Building a Deep Computer Vision model to classify between the characters in the popular TV series The Simpsons ([3:11:57](https://www.youtube.com/watch?v=x3c8w2ruhjs&t=11517s))
+**Why**: Without this rule, remote management would be impossible if the default policy is set to DROP.
 
-# Credits
-The images in the [Photos](https://github.com/jasmcaus/opencv-course/tree/master/Resources/Photos) and [Videos](https://github.com/jasmcaus/opencv-course/tree/master/Resources/Videos) folders were downloaded from [Unsplash](http://unsplash.com) and [Pixabay](http://pixabay.com), unless otherwise mentioned.
+### 2. Allow Established and Related Connections
 
+```
+sudo iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+```
 
-The images in the [Faces](https://github.com/jasmcaus/opencv-course/tree/master/Resources/Faces) folder were procurred from a [repo](https://www.kaggle.com/dansbecker/5-celebrity-faces-dataset) on Kaggle.
+**Reason**: This rule permits packets that are part of established connections or related to existing connections.
+
+**Why**: For proper network functionality, the server needs to receive responses to outgoing connections. This rule ensures that ongoing connections are not disrupted by the firewall.
+
+### 3. Set Default Policy for Outgoing Traffic
+
+```
+sudo iptables -P OUTPUT ACCEPT
+```
+
+**Reason**: Sets the default rule for outbound traffic to accept.
+
+**Why**: This allows the server to start outgoing connections without restrictions, which is generally safe since the rule focuses on incoming traffic.
+
+### 4. Allow HTTP Traffic
+
+```
+sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+```
+
+**Reason**: Permits incoming HTTP connections on the standard port 80.
+
+**Why**: Necessary for a web server, allowing users to access web content hosted on the server.
+
+### 5. Allow HTTPS Traffic
+
+```
+sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+```
+
+**Reason**: Allows incoming HTTPS connections on the standard port 443.
+
+**Why**: Required for secure web communications through SSL, enabling encrypted data transfer between clients and the server.
+
+### 6. SYN Flood Protection
+
+```
+sudo iptables -A INPUT -p tcp --syn -m limit --limit 1/s --limit-burst 3 -j ACCEPT
+sudo iptables -A INPUT -p tcp --syn -j DROP
+```
+
+**Reason**: Limits the rate of new TCP connections with the SYN flag and drops excessive requests.
+
+**Why**: Protects against SYN flood attacks, which attempt to consume server resources by sending a large number of SYN packets without completing the TCP handshake.
+
+### 7. NULL Packet Protection
+
+```
+sudo iptables -A INPUT -p tcp --tcp-flags ALL NONE -j DROP
+```
+
+**Reason**: Drops packets with no TCP flags set (NULL packets).
+
+**Why**: NULL packets are often used in network reconnaissance and can indicate a port scan. Legitimate traffic should never have all TCP flags unset, making this an effective rule to block certain types of scanning activity.
+
+### 8. Log Blocked Traffic
+
+```
+sudo iptables -A INPUT -j LOG --log-prefix "BLOCKED: "
+```
+
+**Reason**: Logs all packets that reach this rule.
+
+**Why**: Provides visibility into blocked traffic, aiding in threat analysis and firewall rule optimization.
+
+### 9. Log New Allowed Connections
+
+```
+sudo iptables -I INPUT 1 -m state --state NEW -j LOG --log-prefix "ALLOWED: "
+```
+
+**Reason**: Logs all new connections that are allowed through the firewall.
+
+**Why**: Helps monitor legitimate traffic and detect anomalies in access patterns, valuable for security auditing.
+
+### 10. Save Firewall Rules
+
+```
+sudo iptables-save > /etc/iptables.rules
+sudo iptables-save | sudo tee /etc/iptables.rules > /dev/null
+```
+
+**Reason**: Saves the current iptables configuration to a file.
+
+**Why**: Ensures rules can be restored after a system reboot.
+
+### 11. Restore Rules at Boot
+
+```
+sudo sh -c "echo 'iptables-restore < /etc/iptables.rules' >> /etc/rc.local"
+sudo chmod +x /etc/rc.local
+```
+
+**Reason**: Configures the system to restore iptables rules on boot.
+
+**Why**: Ensures continuous protection even after server restarts.
